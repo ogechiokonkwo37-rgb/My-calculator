@@ -1,755 +1,984 @@
-// GodswillCore Advanced Calculator
-// Comprehensive calculator with scientific functions, history, and memory
-
-class AdvancedCalculator {
-    constructor() {
-        this.display = '';
-        this.currentValue = '0';
-        this.previousValue = '';
-        this.operation = null;
-        this.waitingForOperand = false;
-        this.memory = 0;
-        this.history = [];
-        this.angleMode = 'deg'; // deg or rad
-        this.decimalPlaces = 10;
-        this.isScientificMode = false;
-        this.lastResult = null;
-        this.expressionHistory = [];
-        this.maxHistoryLength = 50;
-        this.errorState = false;
-        this.brackets = 0;
-        this.currentExpression = '';
-        this.lastOperation = null;
-    }
-
-    // Core calculation methods
-    calculate(operator, firstOperand, secondOperand) {
-        const a = parseFloat(firstOperand);
-        const b = parseFloat(secondOperand);
-
-        if (isNaN(a) || isNaN(b)) {
-            return 'Error';
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GodswillCore Advanced Calculator</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
         }
 
-        switch (operator) {
-            case '+':
-                return a + b;
-            case '-':
-                return a - b;
-            case '×':
-            case '*':
-                return a * b;
-            case '÷':
-            case '/':
-                if (b === 0) {
-                    return 'Cannot divide by zero';
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .calculator-container {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            padding: 30px;
+            max-width: 500px;
+            width: 100%;
+        }
+
+        .calculator-header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .calculator-header h1 {
+            color: #667eea;
+            font-size: 24px;
+            margin-bottom: 5px;
+        }
+
+        .mode-toggle {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .mode-btn {
+            padding: 8px 16px;
+            border: 2px solid #667eea;
+            background: white;
+            color: #667eea;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+
+        .mode-btn.active {
+            background: #667eea;
+            color: white;
+        }
+
+        .display {
+            background: #2d3748;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+            min-height: 100px;
+        }
+
+        .expression {
+            color: #a0aec0;
+            font-size: 16px;
+            min-height: 20px;
+            margin-bottom: 10px;
+            word-wrap: break-word;
+        }
+
+        .result {
+            color: white;
+            font-size: 36px;
+            font-weight: bold;
+            text-align: right;
+            word-wrap: break-word;
+        }
+
+        .memory-indicator {
+            color: #48bb78;
+            font-size: 12px;
+            margin-top: 5px;
+        }
+
+        .button-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .button-grid.scientific {
+            grid-template-columns: repeat(5, 1fr);
+        }
+
+        button {
+            padding: 20px;
+            font-size: 18px;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-weight: 600;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        .btn-number {
+            background: #edf2f7;
+            color: #2d3748;
+        }
+
+        .btn-operator {
+            background: #667eea;
+            color: white;
+        }
+
+        .btn-function {
+            background: #4299e1;
+            color: white;
+            font-size: 16px;
+        }
+
+        .btn-special {
+            background: #ed8936;
+            color: white;
+        }
+
+        .btn-equals {
+            background: #48bb78;
+            color: white;
+            grid-column: span 2;
+        }
+
+        .btn-clear {
+            background: #f56565;
+            color: white;
+        }
+
+        .btn-wide {
+            grid-column: span 2;
+        }
+
+        .history-panel {
+            background: #f7fafc;
+            border-radius: 10px;
+            padding: 15px;
+            margin-top: 20px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .history-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .history-header h3 {
+            color: #2d3748;
+            font-size: 16px;
+        }
+
+        .clear-history {
+            padding: 5px 10px;
+            background: #f56565;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+
+        .history-item {
+            padding: 8px;
+            background: white;
+            margin-bottom: 5px;
+            border-radius: 5px;
+            color: #4a5568;
+            font-size: 14px;
+        }
+
+        .scientific-panel {
+            display: none;
+        }
+
+        .scientific-panel.active {
+            display: block;
+        }
+
+        @media (max-width: 600px) {
+            .calculator-container {
+                padding: 20px;
+            }
+
+            button {
+                padding: 15px;
+                font-size: 16px;
+            }
+
+            .result {
+                font-size: 28px;
+            }
+
+            .button-grid.scientific {
+                grid-template-columns: repeat(4, 1fr);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="calculator-container">
+        <div class="calculator-header">
+            <h1>🧮 GodswillCore Calculator</h1>
+            <div class="mode-toggle">
+                <button class="mode-btn active" id="basicMode">Basic</button>
+                <button class="mode-btn" id="scientificMode">Scientific</button>
+                <button class="mode-btn" id="angleMode">DEG</button>
+            </div>
+        </div>
+
+        <div class="display">
+            <div class="expression" id="expression"></div>
+            <div class="result" id="result">0</div>
+            <div class="memory-indicator" id="memoryIndicator"></div>
+        </div>
+
+        <!-- Basic Calculator Buttons -->
+        <div class="button-grid" id="basicButtons">
+            <button class="btn-clear" onclick="handleClear()">AC</button>
+            <button class="btn-special" onclick="handleClearEntry()">CE</button>
+            <button class="btn-special" onclick="handleBackspace()">⌫</button>
+            <button class="btn-operator" onclick="handleOperator('÷')">÷</button>
+
+            <button class="btn-number" onclick="handleNumber('7')">7</button>
+            <button class="btn-number" onclick="handleNumber('8')">8</button>
+            <button class="btn-number" onclick="handleNumber('9')">9</button>
+            <button class="btn-operator" onclick="handleOperator('×')">×</button>
+
+            <button class="btn-number" onclick="handleNumber('4')">4</button>
+            <button class="btn-number" onclick="handleNumber('5')">5</button>
+            <button class="btn-number" onclick="handleNumber('6')">6</button>
+            <button class="btn-operator" onclick="handleOperator('-')">-</button>
+
+            <button class="btn-number" onclick="handleNumber('1')">1</button>
+            <button class="btn-number" onclick="handleNumber('2')">2</button>
+            <button class="btn-number" onclick="handleNumber('3')">3</button>
+            <button class="btn-operator" onclick="handleOperator('+')">+</button>
+
+            <button class="btn-number" onclick="handleNumber('0')">0</button>
+            <button class="btn-number" onclick="handleDecimal()">.</button>
+            <button class="btn-special" onclick="handlePercent()">%</button>
+            <button class="btn-equals" onclick="handleEquals()">=</button>
+        </div>
+
+        <!-- Scientific Calculator Buttons -->
+        <div class="button-grid scientific scientific-panel" id="scientificButtons">
+            <button class="btn-function" onclick="handleFunction('sin')">sin</button>
+            <button class="btn-function" onclick="handleFunction('cos')">cos</button>
+            <button class="btn-function" onclick="handleFunction('tan')">tan</button>
+            <button class="btn-function" onclick="handleFunction('sqrt')">√</button>
+            <button class="btn-function" onclick="handleFunction('square')">x²</button>
+
+            <button class="btn-function" onclick="handleFunction('asin')">asin</button>
+            <button class="btn-function" onclick="handleFunction('acos')">acos</button>
+            <button class="btn-function" onclick="handleFunction('atan')">atan</button>
+            <button class="btn-function" onclick="handleFunction('cube')">x³</button>
+            <button class="btn-function" onclick="handleFunction('power')">xʸ</button>
+
+            <button class="btn-function" onclick="handleFunction('ln')">ln</button>
+            <button class="btn-function" onclick="handleFunction('log')">log</button>
+            <button class="btn-function" onclick="handleFunction('exp')">eˣ</button>
+            <button class="btn-function" onclick="handleFunction('factorial')">n!</button>
+            <button class="btn-function" onclick="handleFunction('reciprocal')">1/x</button>
+
+            <button class="btn-function" onclick="handleFunction('pi')">π</button>
+            <button class="btn-function" onclick="handleFunction('e')">e</button>
+            <button class="btn-function" onclick="handleFunction('abs')">|x|</button>
+            <button class="btn-function" onclick="handleFunction('random')">Rnd</button>
+            <button class="btn-function" onclick="handleFunction('cubeRoot')">∛</button>
+
+            <button class="btn-special" onclick="handleMemory('MC')">MC</button>
+            <button class="btn-special" onclick="handleMemory('MR')">MR</button>
+            <button class="btn-special" onclick="handleMemory('M+')">M+</button>
+            <button class="btn-special" onclick="handleMemory('M-')">M-</button>
+            <button class="btn-special" onclick="handleMemory('MS')">MS</button>
+        </div>
+
+        <!-- History Panel -->
+        <div class="history-panel">
+            <div class="history-header">
+                <h3>History</h3>
+                <button class="clear-history" onclick="clearHistory()">Clear</button>
+            </div>
+            <div id="historyList"></div>
+        </div>
+    </div>
+
+    <script>
+        // GodswillCore Advanced Calculator
+        class AdvancedCalculator {
+            constructor() {
+                this.display = '';
+                this.currentValue = '0';
+                this.previousValue = '';
+                this.operation = null;
+                this.waitingForOperand = false;
+                this.memory = 0;
+                this.history = [];
+                this.angleMode = 'deg';
+                this.decimalPlaces = 10;
+                this.isScientificMode = false;
+                this.lastResult = null;
+                this.expressionHistory = [];
+                this.maxHistoryLength = 50;
+                this.errorState = false;
+                this.brackets = 0;
+                this.currentExpression = '';
+                this.lastOperation = null;
+            }
+
+            calculate(operator, firstOperand, secondOperand) {
+                const a = parseFloat(firstOperand);
+                const b = parseFloat(secondOperand);
+
+                if (isNaN(a) || isNaN(b)) {
+                    return 'Error';
                 }
-                return a / b;
-            case '%':
-                return a % b;
-            case '^':
-            case '**':
-                return Math.pow(a, b);
-            case 'root':
-                if (a < 0 && b % 2 === 0) {
-                    return 'Error: Even root of negative';
+
+                switch (operator) {
+                    case '+':
+                        return a + b;
+                    case '-':
+                        return a - b;
+                    case '×':
+                    case '*':
+                        return a * b;
+                    case '÷':
+                    case '/':
+                        if (b === 0) {
+                            return 'Cannot divide by zero';
+                        }
+                        return a / b;
+                    case '%':
+                        return a % b;
+                    case '^':
+                    case '**':
+                        return Math.pow(a, b);
+                    case 'root':
+                        if (a < 0 && b % 2 === 0) {
+                            return 'Error: Even root of negative';
+                        }
+                        return Math.pow(a, 1 / b);
+                    case 'log':
+                        if (a <= 0 || b <= 0 || b === 1) {
+                            return 'Error: Invalid log';
+                        }
+                        return Math.log(a) / Math.log(b);
+                    default:
+                        return b;
                 }
-                return Math.pow(a, 1 / b);
-            case 'log':
-                if (a <= 0 || b <= 0 || b === 1) {
-                    return 'Error: Invalid log';
+            }
+
+            inputDigit(digit) {
+                if (this.errorState) {
+                    this.clear();
                 }
-                return Math.log(a) / Math.log(b);
-            default:
-                return b;
+
+                if (this.waitingForOperand) {
+                    this.currentValue = String(digit);
+                    this.waitingForOperand = false;
+                } else {
+                    this.currentValue = this.currentValue === '0' ? String(digit) : this.currentValue + digit;
+                }
+            }
+
+            inputDecimal() {
+                if (this.errorState) {
+                    this.clear();
+                }
+
+                if (this.waitingForOperand) {
+                    this.currentValue = '0.';
+                    this.waitingForOperand = false;
+                } else if (this.currentValue.indexOf('.') === -1) {
+                    this.currentValue += '.';
+                }
+            }
+
+            inputPercent() {
+                const value = parseFloat(this.currentValue);
+                if (!isNaN(value)) {
+                    this.currentValue = String(value / 100);
+                }
+            }
+
+            toggleSign() {
+                const value = parseFloat(this.currentValue);
+                if (!isNaN(value) && value !== 0) {
+                    this.currentValue = String(-value);
+                }
+            }
+
+            performOperation(nextOperator) {
+                const inputValue = parseFloat(this.currentValue);
+
+                if (this.previousValue === '' && !isNaN(inputValue)) {
+                    this.previousValue = this.currentValue;
+                } else if (this.operation) {
+                    const result = this.calculate(this.operation, this.previousValue, this.currentValue);
+                    
+                    if (typeof result === 'string' && result.includes('Error')) {
+                        this.currentValue = result;
+                        this.errorState = true;
+                        return;
+                    }
+
+                    this.currentValue = String(this.formatResult(result));
+                    this.previousValue = this.currentValue;
+                    this.addToHistory(`${this.previousValue} ${this.operation} ${inputValue} = ${this.currentValue}`);
+                }
+
+                this.waitingForOperand = true;
+                this.operation = nextOperator;
+                this.lastOperation = nextOperator;
+            }
+
+            equals() {
+                if (this.operation && this.previousValue !== '') {
+                    const inputValue = parseFloat(this.currentValue);
+                    const prevValue = parseFloat(this.previousValue);
+                    
+                    if (isNaN(inputValue) || isNaN(prevValue)) {
+                        this.currentValue = 'Error';
+                        this.errorState = true;
+                        return;
+                    }
+
+                    const expression = `${this.previousValue} ${this.operation} ${this.currentValue}`;
+                    const result = this.calculate(this.operation, this.previousValue, this.currentValue);
+
+                    if (typeof result === 'string' && result.includes('Error')) {
+                        this.currentValue = result;
+                        this.errorState = true;
+                        return;
+                    }
+
+                    this.currentValue = String(this.formatResult(result));
+                    this.addToHistory(`${expression} = ${this.currentValue}`);
+                    this.lastResult = this.currentValue;
+                    this.operation = null;
+                    this.previousValue = '';
+                    this.waitingForOperand = true;
+                }
+            }
+
+            squareRoot() {
+                const value = parseFloat(this.currentValue);
+                if (value < 0) {
+                    this.currentValue = 'Error: Negative sqrt';
+                    this.errorState = true;
+                    return;
+                }
+                const result = Math.sqrt(value);
+                this.addToHistory(`√${value} = ${result}`);
+                this.currentValue = String(this.formatResult(result));
+                this.waitingForOperand = true;
+            }
+
+            square() {
+                const value = parseFloat(this.currentValue);
+                const result = value * value;
+                this.addToHistory(`${value}² = ${result}`);
+                this.currentValue = String(this.formatResult(result));
+                this.waitingForOperand = true;
+            }
+
+            cube() {
+                const value = parseFloat(this.currentValue);
+                const result = Math.pow(value, 3);
+                this.addToHistory(`${value}³ = ${result}`);
+                this.currentValue = String(this.formatResult(result));
+                this.waitingForOperand = true;
+            }
+
+            reciprocal() {
+                const value = parseFloat(this.currentValue);
+                if (value === 0) {
+                    this.currentValue = 'Cannot divide by zero';
+                    this.errorState = true;
+                    return;
+                }
+                const result = 1 / value;
+                this.addToHistory(`1/${value} = ${result}`);
+                this.currentValue = String(this.formatResult(result));
+                this.waitingForOperand = true;
+            }
+
+            factorial() {
+                const value = parseFloat(this.currentValue);
+                if (value < 0 || !Number.isInteger(value)) {
+                    this.currentValue = 'Error: Invalid factorial';
+                    this.errorState = true;
+                    return;
+                }
+                if (value > 170) {
+                    this.currentValue = 'Error: Number too large';
+                    this.errorState = true;
+                    return;
+                }
+                
+                let result = 1;
+                for (let i = 2; i <= value; i++) {
+                    result *= i;
+                }
+                
+                this.addToHistory(`${value}! = ${result}`);
+                this.currentValue = String(this.formatResult(result));
+                this.waitingForOperand = true;
+            }
+
+            power() {
+                this.performOperation('^');
+            }
+
+            toRadians(degrees) {
+                return degrees * (Math.PI / 180);
+            }
+
+            toDegrees(radians) {
+                return radians * (180 / Math.PI);
+            }
+
+            sine() {
+                let value = parseFloat(this.currentValue);
+                if (this.angleMode === 'deg') {
+                    value = this.toRadians(value);
+                }
+                const result = Math.sin(value);
+                this.addToHistory(`sin(${this.currentValue}) = ${result}`);
+                this.currentValue = String(this.formatResult(result));
+                this.waitingForOperand = true;
+            }
+
+            cosine() {
+                let value = parseFloat(this.currentValue);
+                if (this.angleMode === 'deg') {
+                    value = this.toRadians(value);
+                }
+                const result = Math.cos(value);
+                this.addToHistory(`cos(${this.currentValue}) = ${result}`);
+                this.currentValue = String(this.formatResult(result));
+                this.waitingForOperand = true;
+            }
+
+            tangent() {
+                let value = parseFloat(this.currentValue);
+                if (this.angleMode === 'deg') {
+                    value = this.toRadians(value);
+                }
+                const cosValue = Math.cos(value);
+                if (Math.abs(cosValue) < 1e-10) {
+                    this.currentValue = 'Error: Undefined';
+                    this.errorState = true;
+                    return;
+                }
+                const result = Math.tan(value);
+                this.addToHistory(`tan(${this.currentValue}) = ${result}`);
+                this.currentValue = String(this.formatResult(result));
+                this.waitingForOperand = true;
+            }
+
+            arcSine() {
+                const value = parseFloat(this.currentValue);
+                if (value < -1 || value > 1) {
+                    this.currentValue = 'Error: Out of range';
+                    this.errorState = true;
+                    return;
+                }
+                let result = Math.asin(value);
+                if (this.angleMode === 'deg') {
+                    result = this.toDegrees(result);
+                }
+                this.addToHistory(`asin(${value}) = ${result}`);
+                this.currentValue = String(this.formatResult(result));
+                this.waitingForOperand = true;
+            }
+
+            arcCosine() {
+                const value = parseFloat(this.currentValue);
+                if (value < -1 || value > 1) {
+                    this.currentValue = 'Error: Out of range';
+                    this.errorState = true;
+                    return;
+                }
+                let result = Math.acos(value);
+                if (this.angleMode === 'deg') {
+                    result = this.toDegrees(result);
+                }
+                this.addToHistory(`acos(${value}) = ${result}`);
+                this.currentValue = String(this.formatResult(result));
+                this.waitingForOperand = true;
+            }
+
+            arcTangent() {
+                const value = parseFloat(this.currentValue);
+                let result = Math.atan(value);
+                if (this.angleMode === 'deg') {
+                    result = this.toDegrees(result);
+                }
+                this.addToHistory(`atan(${value}) = ${result}`);
+                this.currentValue = String(this.formatResult(result));
+                this.waitingForOperand = true;
+            }
+
+            naturalLog() {
+                const value = parseFloat(this.currentValue);
+                if (value <= 0) {
+                    this.currentValue = 'Error: Invalid log';
+                    this.errorState = true;
+                    return;
+                }
+                const result = Math.log(value);
+                this.addToHistory(`ln(${value}) = ${result}`);
+                this.currentValue = String(this.formatResult(result));
+                this.waitingForOperand = true;
+            }
+
+            log10() {
+                const value = parseFloat(this.currentValue);
+                if (value <= 0) {
+                    this.currentValue = 'Error: Invalid log';
+                    this.errorState = true;
+                    return;
+                }
+                const result = Math.log10(value);
+                this.addToHistory(`log(${value}) = ${result}`);
+                this.currentValue = String(this.formatResult(result));
+                this.waitingForOperand = true;
+            }
+
+            exponential() {
+                const value = parseFloat(this.currentValue);
+                if (value > 709) {
+                    this.currentValue = 'Error: Overflow';
+                    this.errorState = true;
+                    return;
+                }
+                const result = Math.exp(value);
+                this.addToHistory(`e^${value} = ${result}`);
+                this.currentValue = String(this.formatResult(result));
+                this.waitingForOperand = true;
+            }
+
+            inputPi() {
+                this.currentValue = String(Math.PI);
+                this.waitingForOperand = true;
+            }
+
+            inputE() {
+                this.currentValue = String(Math.E);
+                this.waitingForOperand = true;
+            }
+
+            memoryClear() {
+                this.memory = 0;
+            }
+
+            memoryRecall() {
+                this.currentValue = String(this.memory);
+                this.waitingForOperand = true;
+            }
+
+            memoryAdd() {
+                const value = parseFloat(this.currentValue);
+                if (!isNaN(value)) {
+                    this.memory += value;
+                }
+            }
+
+            memorySubtract() {
+                const value = parseFloat(this.currentValue);
+                if (!isNaN(value)) {
+                    this.memory -= value;
+                }
+            }
+
+            memoryStore() {
+                const value = parseFloat(this.currentValue);
+                if (!isNaN(value)) {
+                    this.memory = value;
+                }
+            }
+
+            clear() {
+                this.currentValue = '0';
+                this.previousValue = '';
+                this.operation = null;
+                this.waitingForOperand = false;
+                this.errorState = false;
+                this.currentExpression = '';
+                this.brackets = 0;
+            }
+
+            clearEntry() {
+                this.currentValue = '0';
+                this.waitingForOperand = false;
+                this.errorState = false;
+            }
+
+            backspace() {
+                if (this.errorState) {
+                    this.clear();
+                    return;
+                }
+
+                if (this.currentValue.length > 1) {
+                    this.currentValue = this.currentValue.slice(0, -1);
+                } else {
+                    this.currentValue = '0';
+                }
+            }
+
+            formatResult(value) {
+                if (isNaN(value) || !isFinite(value)) {
+                    return 'Error';
+                }
+
+                if (Math.abs(value) > 1e15 || (Math.abs(value) < 1e-10 && value !== 0)) {
+                    return value.toExponential(this.decimalPlaces);
+                }
+
+                const rounded = Math.round(value * Math.pow(10, this.decimalPlaces)) / Math.pow(10, this.decimalPlaces);
+                return parseFloat(rounded.toPrecision(15));
+            }
+
+            toggleAngleMode() {
+                this.angleMode = this.angleMode === 'deg' ? 'rad' : 'deg';
+                return this.angleMode;
+            }
+
+            toggleScientificMode() {
+                this.isScientificMode = !this.isScientificMode;
+                return this.isScientificMode;
+            }
+
+            addToHistory(entry) {
+                this.history.unshift(entry);
+                if (this.history.length > this.maxHistoryLength) {
+                    this.history.pop();
+                }
+            }
+
+            getHistory() {
+                return this.history;
+            }
+
+            clearHistory() {
+                this.history = [];
+            }
+
+            absoluteValue() {
+                const value = parseFloat(this.currentValue);
+                const result = Math.abs(value);
+                this.addToHistory(`|${value}| = ${result}`);
+                this.currentValue = String(result);
+                this.waitingForOperand = true;
+            }
+
+            random() {
+                const result = Math.random();
+                this.addToHistory(`random = ${result}`);
+                this.currentValue = String(this.formatResult(result));
+                this.waitingForOperand = true;
+            }
+
+            cubeRoot() {
+                const value = parseFloat(this.currentValue);
+                const result = Math.cbrt(value);
+                this.addToHistory(`∛${value} = ${result}`);
+                this.currentValue = String(this.formatResult(result));
+                this.waitingForOperand = true;
+            }
+
+            getDisplay() {
+                return this.currentValue;
+            }
+
+            getExpression() {
+                if (this.operation && this.previousValue) {
+                    return `${this.previousValue} ${this.operation}`;
+                }
+                return '';
+            }
         }
-    }
 
-    // Input handling
-    inputDigit(digit) {
-        if (this.errorState) {
-            this.clear();
-        }
+        // Initialize calculator
+        const calculator = new AdvancedCalculator();
 
-        if (this.waitingForOperand) {
-            this.currentValue = String(digit);
-            this.waitingForOperand = false;
-        } else {
-            this.currentValue = this.currentValue === '0' ? String(digit) : this.currentValue + digit;
-        }
-        
-        this.updateExpression(digit);
-    }
-
-    inputDecimal() {
-        if (this.errorState) {
-            this.clear();
-        }
-
-        if (this.waitingForOperand) {
-            this.currentValue = '0.';
-            this.waitingForOperand = false;
-        } else if (this.currentValue.indexOf('.') === -1) {
-            this.currentValue += '.';
-        }
-    }
-
-    inputPercent() {
-        const value = parseFloat(this.currentValue);
-        if (!isNaN(value)) {
-            this.currentValue = String(value / 100);
-        }
-    }
-
-    toggleSign() {
-        const value = parseFloat(this.currentValue);
-        if (!isNaN(value) && value !== 0) {
-            this.currentValue = String(-value);
-        }
-    }
-
-    // Operation handling
-    performOperation(nextOperator) {
-        const inputValue = parseFloat(this.currentValue);
-
-        if (this.previousValue === '' && !isNaN(inputValue)) {
-            this.previousValue = this.currentValue;
-        } else if (this.operation) {
-            const result = this.calculate(this.operation, this.previousValue, this.currentValue);
+        // UI Functions
+        function updateDisplay() {
+            document.getElementById('result').textContent = calculator.getDisplay();
+            document.getElementById('expression').textContent = calculator.getExpression();
             
-            if (typeof result === 'string' && result.includes('Error')) {
-                this.currentValue = result;
-                this.errorState = true;
-                return;
+            const memIndicator = document.getElementById('memoryIndicator');
+            if (calculator.memory !== 0) {
+                memIndicator.textContent = `M: ${calculator.memory}`;
+            } else {
+                memIndicator.textContent = '';
             }
-
-            this.currentValue = String(this.formatResult(result));
-            this.previousValue = this.currentValue;
-            this.addToHistory(`${this.previousValue} ${this.operation} ${inputValue} = ${this.currentValue}`);
-        }
-
-        this.waitingForOperand = true;
-        this.operation = nextOperator;
-        this.lastOperation = nextOperator;
-    }
-
-    equals() {
-        if (this.operation && this.previousValue !== '') {
-            const inputValue = parseFloat(this.currentValue);
-            const prevValue = parseFloat(this.previousValue);
             
-            if (isNaN(inputValue) || isNaN(prevValue)) {
-                this.currentValue = 'Error';
-                this.errorState = true;
+            updateHistory();
+        }
+
+        function handleNumber(num) {
+            calculator.inputDigit(num);
+            updateDisplay();
+        }
+
+        function handleOperator(op) {
+            calculator.performOperation(op);
+            updateDisplay();
+        }
+
+        function handleEquals() {
+            calculator.equals();
+            updateDisplay();
+        }
+
+        function handleDecimal() {
+            calculator.inputDecimal();
+            updateDisplay();
+        }
+
+        function handlePercent() {
+            calculator.inputPercent();
+            updateDisplay();
+        }
+
+        function handleClear() {
+            calculator.clear();
+            updateDisplay();
+        }
+
+        function handleClearEntry() {
+            calculator.clearEntry();
+            updateDisplay();
+        }
+
+        function handleBackspace() {
+            calculator.backspace();
+            updateDisplay();
+        }
+
+        function handleFunction(func) {
+            switch(func) {
+                case 'sin': calculator.sine(); break;
+                case 'cos': calculator.cosine(); break;
+                case 'tan': calculator.tangent(); break;
+                case 'asin': calculator.arcSine(); break;
+                case 'acos': calculator.arcCosine(); break;
+                case 'atan': calculator.arcTangent(); break;
+                case 'sqrt': calculator.squareRoot(); break;
+                case 'square': calculator.square(); break;
+                case 'cube': calculator.cube(); break;
+                case 'power': calculator.power(); break;
+                case 'ln': calculator.naturalLog(); break;
+                case 'log': calculator.log10(); break;
+                case 'exp': calculator.exponential(); break;
+                case 'factorial': calculator.factorial(); break;
+                case 'reciprocal': calculator.reciprocal(); break;
+                case 'pi': calculator.inputPi(); break;
+                case 'e': calculator.inputE(); break;
+                case 'abs': calculator.absoluteValue(); break;
+                case 'random': calculator.random(); break;
+                case 'cubeRoot': calculator.cubeRoot(); break;
+            }
+            updateDisplay();
+        }
+
+        function handleMemory(cmd) {
+            switch(cmd) {
+                case 'MC': calculator.memoryClear(); break;
+                case 'MR': calculator.memoryRecall(); break;
+                case 'M+': calculator.memoryAdd(); break;
+                case 'M-': calculator.memorySubtract(); break;
+                case 'MS': calculator.memoryStore(); break;
+            }
+            updateDisplay();
+        }
+
+        function updateHistory() {
+            const historyList = document.getElementById('historyList');
+            const history = calculator.getHistory();
+            
+            if (history.length === 0) {
+                historyList.innerHTML = '<div style="color: #a0aec0; text-align: center; padding: 10px;">No history yet</div>';
                 return;
             }
-
-            const expression = `${this.previousValue} ${this.operation} ${this.currentValue}`;
-            const result = this.calculate(this.operation, this.previousValue, this.currentValue);
-
-            if (typeof result === 'string' && result.includes('Error')) {
-                this.currentValue = result;
-                this.errorState = true;
-                return;
-            }
-
-            this.currentValue = String(this.formatResult(result));
-            this.addToHistory(`${expression} = ${this.currentValue}`);
-            this.lastResult = this.currentValue;
-            this.operation = null;
-            this.previousValue = '';
-            this.waitingForOperand = true;
-        }
-    }
-
-    // Scientific functions
-    squareRoot() {
-        const value = parseFloat(this.currentValue);
-        if (value < 0) {
-            this.currentValue = 'Error: Negative sqrt';
-            this.errorState = true;
-            return;
-        }
-        const result = Math.sqrt(value);
-        this.addToHistory(`√${value} = ${result}`);
-        this.currentValue = String(this.formatResult(result));
-        this.waitingForOperand = true;
-    }
-
-    square() {
-        const value = parseFloat(this.currentValue);
-        const result = value * value;
-        this.addToHistory(`${value}² = ${result}`);
-        this.currentValue = String(this.formatResult(result));
-        this.waitingForOperand = true;
-    }
-
-    cube() {
-        const value = parseFloat(this.currentValue);
-        const result = Math.pow(value, 3);
-        this.addToHistory(`${value}³ = ${result}`);
-        this.currentValue = String(this.formatResult(result));
-        this.waitingForOperand = true;
-    }
-
-    reciprocal() {
-        const value = parseFloat(this.currentValue);
-        if (value === 0) {
-            this.currentValue = 'Cannot divide by zero';
-            this.errorState = true;
-            return;
-        }
-        const result = 1 / value;
-        this.addToHistory(`1/${value} = ${result}`);
-        this.currentValue = String(this.formatResult(result));
-        this.waitingForOperand = true;
-    }
-
-    factorial() {
-        const value = parseFloat(this.currentValue);
-        if (value < 0 || !Number.isInteger(value)) {
-            this.currentValue = 'Error: Invalid factorial';
-            this.errorState = true;
-            return;
-        }
-        if (value > 170) {
-            this.currentValue = 'Error: Number too large';
-            this.errorState = true;
-            return;
-        }
-        
-        let result = 1;
-        for (let i = 2; i <= value; i++) {
-            result *= i;
-        }
-        
-        this.addToHistory(`${value}! = ${result}`);
-        this.currentValue = String(this.formatResult(result));
-        this.waitingForOperand = true;
-    }
-
-    power() {
-        this.performOperation('^');
-    }
-
-    // Trigonometric functions
-    toRadians(degrees) {
-        return degrees * (Math.PI / 180);
-    }
-
-    toDegrees(radians) {
-        return radians * (180 / Math.PI);
-    }
-
-    sine() {
-        let value = parseFloat(this.currentValue);
-        if (this.angleMode === 'deg') {
-            value = this.toRadians(value);
-        }
-        const result = Math.sin(value);
-        this.addToHistory(`sin(${this.currentValue}) = ${result}`);
-        this.currentValue = String(this.formatResult(result));
-        this.waitingForOperand = true;
-    }
-
-    cosine() {
-        let value = parseFloat(this.currentValue);
-        if (this.angleMode === 'deg') {
-            value = this.toRadians(value);
-        }
-        const result = Math.cos(value);
-        this.addToHistory(`cos(${this.currentValue}) = ${result}`);
-        this.currentValue = String(this.formatResult(result));
-        this.waitingForOperand = true;
-    }
-
-    tangent() {
-        let value = parseFloat(this.currentValue);
-        if (this.angleMode === 'deg') {
-            value = this.toRadians(value);
-        }
-        const cosValue = Math.cos(value);
-        if (Math.abs(cosValue) < 1e-10) {
-            this.currentValue = 'Error: Undefined';
-            this.errorState = true;
-            return;
-        }
-        const result = Math.tan(value);
-        this.addToHistory(`tan(${this.currentValue}) = ${result}`);
-        this.currentValue = String(this.formatResult(result));
-        this.waitingForOperand = true;
-    }
-
-    arcSine() {
-        const value = parseFloat(this.currentValue);
-        if (value < -1 || value > 1) {
-            this.currentValue = 'Error: Out of range';
-            this.errorState = true;
-            return;
-        }
-        let result = Math.asin(value);
-        if (this.angleMode === 'deg') {
-            result = this.toDegrees(result);
-        }
-        this.addToHistory(`asin(${value}) = ${result}`);
-        this.currentValue = String(this.formatResult(result));
-        this.waitingForOperand = true;
-    }
-
-    arcCosine() {
-        const value = parseFloat(this.currentValue);
-        if (value < -1 || value > 1) {
-            this.currentValue = 'Error: Out of range';
-            this.errorState = true;
-            return;
-        }
-        let result = Math.acos(value);
-        if (this.angleMode === 'deg') {
-            result = this.toDegrees(result);
-        }
-        this.addToHistory(`acos(${value}) = ${result}`);
-        this.currentValue = String(this.formatResult(result));
-        this.waitingForOperand = true;
-    }
-
-    arcTangent() {
-        const value = parseFloat(this.currentValue);
-        let result = Math.atan(value);
-        if (this.angleMode === 'deg') {
-            result = this.toDegrees(result);
-        }
-        this.addToHistory(`atan(${value}) = ${result}`);
-        this.currentValue = String(this.formatResult(result));
-        this.waitingForOperand = true;
-    }
-
-    // Logarithmic functions
-    naturalLog() {
-        const value = parseFloat(this.currentValue);
-        if (value <= 0) {
-            this.currentValue = 'Error: Invalid log';
-            this.errorState = true;
-            return;
-        }
-        const result = Math.log(value);
-        this.addToHistory(`ln(${value}) = ${result}`);
-        this.currentValue = String(this.formatResult(result));
-        this.waitingForOperand = true;
-    }
-
-    log10() {
-        const value = parseFloat(this.currentValue);
-        if (value <= 0) {
-            this.currentValue = 'Error: Invalid log';
-            this.errorState = true;
-            return;
-        }
-        const result = Math.log10(value);
-        this.addToHistory(`log(${value}) = ${result}`);
-        this.currentValue = String(this.formatResult(result));
-        this.waitingForOperand = true;
-    }
-
-    exponential() {
-        const value = parseFloat(this.currentValue);
-        if (value > 709) {
-            this.currentValue = 'Error: Overflow';
-            this.errorState = true;
-            return;
-        }
-        const result = Math.exp(value);
-        this.addToHistory(`e^${value} = ${result}`);
-        this.currentValue = String(this.formatResult(result));
-        this.waitingForOperand = true;
-    }
-
-    // Constants
-    inputPi() {
-        this.currentValue = String(Math.PI);
-        this.waitingForOperand = true;
-    }
-
-    inputE() {
-        this.currentValue = String(Math.E);
-        this.waitingForOperand = true;
-    }
-
-    // Memory functions
-    memoryClear() {
-        this.memory = 0;
-        console.log('Memory cleared');
-    }
-
-    memoryRecall() {
-        this.currentValue = String(this.memory);
-        this.waitingForOperand = true;
-    }
-
-    memoryAdd() {
-        const value = parseFloat(this.currentValue);
-        if (!isNaN(value)) {
-            this.memory += value;
-            console.log('Added to memory:', value);
-        }
-    }
-
-    memorySubtract() {
-        const value = parseFloat(this.currentValue);
-        if (!isNaN(value)) {
-            this.memory -= value;
-            console.log('Subtracted from memory:', value);
-        }
-    }
-
-    memoryStore() {
-        const value = parseFloat(this.currentValue);
-        if (!isNaN(value)) {
-            this.memory = value;
-            console.log('Stored in memory:', value);
-        }
-    }
-
-    // Utility functions
-    clear() {
-        this.currentValue = '0';
-        this.previousValue = '';
-        this.operation = null;
-        this.waitingForOperand = false;
-        this.errorState = false;
-        this.currentExpression = '';
-        this.brackets = 0;
-    }
-
-    clearEntry() {
-        this.currentValue = '0';
-        this.waitingForOperand = false;
-        this.errorState = false;
-    }
-
-    backspace() {
-        if (this.errorState) {
-            this.clear();
-            return;
+            
+            historyList.innerHTML = history.slice(0, 10).map(item => 
+                `<div class="history-item">${item}</div>`
+            ).join('');
         }
 
-        if (this.currentValue.length > 1) {
-            this.currentValue = this.currentValue.slice(0, -1);
-        } else {
-            this.currentValue = '0';
-        }
-    }
-
-    formatResult(value) {
-        if (isNaN(value) || !isFinite(value)) {
-            return 'Error';
+        function clearHistory() {
+            calculator.clearHistory();
+            updateHistory();
         }
 
-        // Handle very large or very small numbers
-        if (Math.abs(value) > 1e15 || (Math.abs(value) < 1e-10 && value !== 0)) {
-            return value.toExponential(this.decimalPlaces);
-        }
-
-        // Round to decimal places to avoid floating point errors
-        const rounded = Math.round(value * Math.pow(10, this.decimalPlaces)) / Math.pow(10, this.decimalPlaces);
-        
-        // Remove trailing zeros
-        return parseFloat(rounded.toPrecision(15));
-    }
-
-    toggleAngleMode() {
-        this.angleMode = this.angleMode === 'deg' ? 'rad' : 'deg';
-        console.log('Angle mode:', this.angleMode);
-        return this.angleMode;
-    }
-
-    toggleScientificMode() {
-        this.isScientificMode = !this.isScientificMode;
-        return this.isScientificMode;
-    }
-
-    // History management
-    addToHistory(entry) {
-        this.history.unshift(entry);
-        if (this.history.length > this.maxHistoryLength) {
-            this.history.pop();
-        }
-    }
-
-    getHistory() {
-        return this.history;
-    }
-
-    clearHistory() {
-        this.history = [];
-    }
-
-    updateExpression(value) {
-        if (this.waitingForOperand && this.operation) {
-            this.currentExpression += ` ${this.operation} `;
-        }
-        this.currentExpression += value;
-    }
-
-    // Advanced functions
-    absoluteValue() {
-        const value = parseFloat(this.currentValue);
-        const result = Math.abs(value);
-        this.addToHistory(`|${value}| = ${result}`);
-        this.currentValue = String(result);
-        this.waitingForOperand = true;
-    }
-
-    floor() {
-        const value = parseFloat(this.currentValue);
-        const result = Math.floor(value);
-        this.addToHistory(`floor(${value}) = ${result}`);
-        this.currentValue = String(result);
-        this.waitingForOperand = true;
-    }
-
-    ceiling() {
-        const value = parseFloat(this.currentValue);
-        const result = Math.ceil(value);
-        this.addToHistory(`ceil(${value}) = ${result}`);
-        this.currentValue = String(result);
-        this.waitingForOperand = true;
-    }
-
-    round() {
-        const value = parseFloat(this.currentValue);
-        const result = Math.round(value);
-        this.addToHistory(`round(${value}) = ${result}`);
-        this.currentValue = String(result);
-        this.waitingForOperand = true;
-    }
-
-    // Hyperbolic functions
-    sinh() {
-        const value = parseFloat(this.currentValue);
-        const result = Math.sinh(value);
-        this.addToHistory(`sinh(${value}) = ${result}`);
-        this.currentValue = String(this.formatResult(result));
-        this.waitingForOperand = true;
-    }
-
-    cosh() {
-        const value = parseFloat(this.currentValue);
-        const result = Math.cosh(value);
-        this.addToHistory(`cosh(${value}) = ${result}`);
-        this.currentValue = String(this.formatResult(result));
-        this.waitingForOperand = true;
-    }
-
-    tanh() {
-        const value = parseFloat(this.currentValue);
-        const result = Math.tanh(value);
-        this.addToHistory(`tanh(${value}) = ${result}`);
-        this.currentValue = String(this.formatResult(result));
-        this.waitingForOperand = true;
-    }
-
-    // Random number
-    random() {
-        const result = Math.random();
-        this.addToHistory(`random = ${result}`);
-        this.currentValue = String(this.formatResult(result));
-        this.waitingForOperand = true;
-    }
-
-    // Percentage calculation
-    percentageOf() {
-        if (this.previousValue !== '') {
-            const base = parseFloat(this.previousValue);
-            const percent = parseFloat(this.currentValue);
-            const result = (base * percent) / 100;
-            this.addToHistory(`${percent}% of ${base} = ${result}`);
-            this.currentValue = String(this.formatResult(result));
-            this.waitingForOperand = true;
-        }
-    }
-
-    // Number conversion
-    toScientificNotation() {
-        const value = parseFloat(this.currentValue);
-        if (!isNaN(value)) {
-            this.currentValue = value.toExponential(6);
-        }
-    }
-
-    // Statistical functions (requires array input)
-    calculateStatistics(numbers) {
-        if (!Array.isArray(numbers) || numbers.length === 0) {
-            return null;
-        }
-
-        const sum = numbers.reduce((a, b) => a + b, 0);
-        const mean = sum / numbers.length;
-        
-        const sortedNumbers = [...numbers].sort((a, b) => a - b);
-        const median = numbers.length % 2 === 0
-            ? (sortedNumbers[numbers.length / 2 - 1] + sortedNumbers[numbers.length / 2]) / 2
-            : sortedNumbers[Math.floor(numbers.length / 2)];
-
-        const variance = numbers.reduce((acc, val) => acc + Math.pow(val - mean, 2), 0) / numbers.length;
-        const stdDev = Math.sqrt(variance);
-
-        return {
-            count: numbers.length,
-            sum: this.formatResult(sum),
-            mean: this.formatResult(mean),
-            median: this.formatResult(median),
-            stdDev: this.formatResult(stdDev),
-            min: Math.min(...numbers),
-            max: Math.max(...numbers)
-        };
-    }
-
-    // Modulo operation
-    modulo() {
-        this.performOperation('%');
-    }
-
-    // Get display value
-    getDisplay() {
-        return this.currentValue;
-    }
-
-    // Get full expression
-    getExpression() {
-        if (this.operation && this.previousValue) {
-            return `${this.previousValue} ${this.operation} ${this.currentValue}`;
-        }
-        return this.currentValue;
-    }
-
-    // State management
-    getState() {
-        return {
-            display: this.currentValue,
-            memory: this.memory,
-            angleMode: this.angleMode,
-            scientificMode: this.isScientificMode,
-            expression: this.getExpression(),
-            hasError: this.errorState
-        };
-    }
-
-    // Import/Export state
-    exportState() {
-        return JSON.stringify({
-            currentValue: this.currentValue,
-            previousValue: this.previousValue,
-            operation: this.operation,
-            memory: this.memory,
-            history: this.history,
-            angleMode: this.angleMode
+        // Mode toggles
+        document.getElementById('basicMode').addEventListener('click', function() {
+            document.getElementById('scientificButtons').classList.remove('active');
+            document.getElementById('basicMode').classList.add('active');
+            document.getElementById('scientificMode').classList.remove('active');
         });
-    }
 
-    importState(stateString) {
-        try {
-            const state = JSON.parse(stateString);
-            this.currentValue = state.currentValue || '0';
-            this.previousValue = state.previousValue || '';
-            this.operation = state.operation || null;
-            this.memory = state.memory || 0;
-            this.history = state.history || [];
-            this.angleMode = state.angleMode || 'deg';
-            return true;
-        } catch (e) {
-            console.error('Failed to import state:', e);
-            return false;
-        }
-    }
+        document.getElementById('scientificMode').addEventListener('click', function() {
+            document.getElementById('scientificButtons').classList.add('active');
+            document.getElementById('scientificMode').classList.add('active');
+            document.getElementById('basicMode').classList.remove('active');
+        });
 
-    // Keyboard support helper
-    handleKeyboardInput(key) {
-        const keyMap = {
-            '0': () => this.inputDigit(0),
-            '1': () => this.inputDigit(1),
-            '2': () => this.inputDigit(2),
-            '3': () => this.inputDigit(3),
-            '4': () => this.inputDigit(4),
-            '5': () => this.inputDigit(5),
-            '6': () => this.inputDigit(6),
-            '7': () => this.inputDigit(7),
-            '8': () => this.inputDigit(8),
-            '9': () => this.inputDigit(9),
-            '.': () => this.inputDecimal(),
-            '+': () => this.performOperation('+'),
-            '-': () => this.performOperation('-'),
-            '*': () => this.performOperation('×'),
-            '/': () => this.performOperation('÷'),
-            'Enter': () => this.equals(),
-            '=': () => this.equals(),
-            'Escape': () => this.clear(),
-            'Backspace': () => this.backspace(),
-            '%': () => this.inputPercent()
-        };
+        document.getElementById('angleMode').addEventListener('click', function() {
+            const mode = calculator.toggleAngleMode();
+            this.textContent = mode.toUpperCase();
+        });
 
-        if (keyMap[key]) {
-            keyMap[key]();
-            return true;
-        }
-        return false;
-    }
+        // Keyboard support
+        document.addEventListener('keydown', function(e) {
+            const key = e.key;
+            
+            if (key >= '0' && key <= '9') {
+                handleNumber(key);
+            } else if (key === '.') {
+                handleDecimal();
+            } else if (key === '+') {
+                handleOperator('+');
+            } else if (key === '-') {
+                handleOperator('-');
+            } else if (key === '*') {
+                handleOperator('×');
+            } else if (key === '/') {
+                e.preventDefault();
+                handleOperator('÷');
+            } else if (key === 'Enter' || key === '=') {
+                e.preventDefault();
+                handleEquals();
+            } else if (key === 'Escape') {
+                handleClear();
+            } else if (key === 'Backspace') {
+                e.preventDefault();
+                handleBackspace();
+            } else if (key === '%') {
+                handlePercent();
+            }
+        });
 
-    // Complex number support (basic)
-    parseComplexNumber(str) {
-        // Basic parsing for numbers like "3+4i"
-        const match = str.match(/^(-?\d+\.?\d*)\+(-?\d+\.?\d*)i$/);
-        if (match) {
-            return {
-                real: parseFloat(match[1]),
-                imag: parseFloat(match[2])
-            };
-        }
-        return null;
-    }
-
-    // Advanced power of 10
-    powerOf10() {
-        const value = parseFloat(this.currentValue);
-        const result = Math.pow(10, value);
-        this.addToHistory(`10^${value} = ${result}`);
-        this.currentValue = String(this.formatResult(result));
-        this.waitingForOperand = true;
-    }
-
-    // Cube root
-    cubeRoot() {
-        const value = parseFloat(this.currentValue);
-        const result = Math.cbrt(value);
-        this.addToHistory(`∛${value} = ${result}`);
-        this.currentValue = String(this.formatResult(result));
-        this.waitingForOperand = true;
-    }
-
-    // Last answer recall
-    recallLastAnswer() {
-        if (this.lastResult !== null) {
-            this.currentValue = this.lastResult;
-            this.waitingForOperand = true;
-        }
-    }
-}
-
-// Initialize calculator
-const calculator = new AdvancedCalculator();
-
-// Example usage and testing
-console.log('GodswillCore Advanced Calculator initialized');
-console.log('Calculator features:');
-console.log('- Basic arithmetic operations');
-console.log('- Scientific functions (trig, log, exp)');
-console.log('- Memory operations (MC, MR, M+, M-, MS)');
-console.log('- History tracking');
-console.log('- Angle mode (degrees/radians)');
-console.log('- Advanced functions (factorial, hyperbolic, etc.)');
-console.log('- Keyboard support');
-console.log('\nCurrent display:', calculator.getDisplay());
-
-// Export for use
-if (typeof module !== 'undefined' && module.exports) {
-    module.exports = AdvancedCalculator;
-}
+        // Initialize display
+        updateDisplay();
+    </script>
+</body>
+</html>
